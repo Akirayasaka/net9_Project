@@ -8,5 +8,7 @@ namespace net9_WebAPI.Models.Dto
         [Required]
         [StringLength(30)]
         public required string Name { get; set; }
+        public int Occupancy { get; set; }
+        public int Sqft { get; set; }
     }
 }
