@@ -8,12 +8,13 @@ namespace net9_WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class VillaAPIController : ControllerBase
+    public class VillaAPIController(ILogger<VillaAPIController> logger) : ControllerBase
     {
         [HttpGet]
         [ProducesResponseType(statusCode: StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<VillaDTO>> GetVillas()
         {
+            logger.LogInformation("Get All Villas");
             return Ok(VillaStore.villaList);
         }
 
