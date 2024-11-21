@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using net9_WebAPI.Data;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 //Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File("log/villaLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
 //builder.Host.UseSerilog();
 #endregion
-
+builder.Services.AddDbContext<ApplicationDbContext>(option => { option.UseSqlServer(builder.Configuration.GetConnectionString("Default")); });
 builder.Services.AddControllers(option => { option.ReturnHttpNotAcceptable = true; }).AddNewtonsoftJson();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 //builder.Services.AddOpenApi();
