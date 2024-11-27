@@ -46,13 +46,9 @@ namespace net9_WebAPI.Controllers
         [HttpPost]
         [ProducesResponseType(statusCode: StatusCodes.Status200OK)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public ActionResult<VillaDTO> CreateVilla([FromBody] VillaDTO villaDTO)
+        public ActionResult<VillaDTO> CreateVilla([FromBody] VillaCreateDTO villaDTO)
         {
             if (villaDTO == null)
-            {
-                return BadRequest();
-            }
-            if (villaDTO.Id > 0)
             {
                 return BadRequest();
             }
@@ -95,7 +91,7 @@ namespace net9_WebAPI.Controllers
         [ProducesResponseType(statusCode: StatusCodes.Status204NoContent)]
         [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public IActionResult UpdateVilla(int id, [FromBody] VillaDTO villaDTO)
+        public IActionResult UpdateVilla(int id, [FromBody] VillaUpdateDTO villaDTO)
         {
             if (villaDTO == null || villaDTO.Id != id || id == 0) { return BadRequest(); }
             Villa? villa = _db.Villas.FirstOrDefault(x => x.Id == id);
@@ -117,13 +113,38 @@ namespace net9_WebAPI.Controllers
         [ProducesResponseType(statusCode: StatusCodes.Status204NoContent)]
         [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public IActionResult UpdatePartialVilla(int id, JsonPatchDocument<VillaDTO> patchDTO)
+        public IActionResult UpdatePartialVilla(int id, JsonPatchDocument<VillaUpdateDTO> patchDTO)
         {
             if (id == 0 || patchDTO == null) { return BadRequest(); }
             Villa? villa = _db.Villas.AsNoTracking().FirstOrDefault(x => x.Id == id);
             if (villa == null) { return NotFound(); }
-            //patchDTO.ApplyTo(villa, ModelState);
-            //if (ModelState.IsValid) { return BadRequest(ModelState); }
+            VillaUpdateDTO villaUpdateDTO = new()
+            {
+                Id = villa.Id,
+                Name = villa.Name,
+                Details = villa.Details,
+                Rate = villa.Rate,
+                Sqft = villa.Sqft,
+                Occupancy = villa.Occupancy,
+                ImageUrl = villa.ImageUrl,
+                Amenity = villa.Amenity,
+            };
+            patchDTO.ApplyTo(villaUpdateDTO, ModelState);
+            Villa model = new()
+            {
+                Id = villaUpdateDTO.Id,
+                Name = villaUpdateDTO.Name,
+                Details = villaUpdateDTO.Details,
+                Rate = villaUpdateDTO.Rate,
+                Sqft= villaUpdateDTO.Sqft,
+                Occupancy= villaUpdateDTO.Occupancy,
+                ImageUrl = villaUpdateDTO.ImageUrl,
+                Amenity= villaUpdateDTO.Amenity,
+                UpdatedDate = DateTime.Now,
+            };
+            _db.Update(model);
+            _db.SaveChanges();
+            if (ModelState.IsValid) { return BadRequest(ModelState); }
             return NoContent();
         }
     }
