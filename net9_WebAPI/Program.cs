@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using net9_WebAPI;
 using net9_WebAPI.Data;
 using Serilog;
 
@@ -11,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 //builder.Host.UseSerilog();
 #endregion
 builder.Services.AddDbContext<ApplicationDbContext>(option => { option.UseSqlServer(builder.Configuration.GetConnectionString("Default")); });
+builder.Services.AddAutoMapper(typeof(MappingConfig));
 builder.Services.AddControllers(option => { option.ReturnHttpNotAcceptable = true; }).AddNewtonsoftJson();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 //builder.Services.AddOpenApi();
