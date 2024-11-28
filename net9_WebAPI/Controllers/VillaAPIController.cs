@@ -14,11 +14,11 @@ namespace net9_WebAPI.Controllers
     {
         [HttpGet]
         [ProducesResponseType(statusCode: StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<VillaDTO>> GetVillas()
+        public async Task<ActionResult<IEnumerable<VillaDTO>>> GetVillas()
         {
             try
             {
-                return Ok(_db.Villas.ToList());
+                return Ok(await _db.Villas.ToListAsync());
             }
             catch (Exception ex) { 
                 return BadRequest(ex.Message);
@@ -29,13 +29,13 @@ namespace net9_WebAPI.Controllers
         [ProducesResponseType(statusCode: StatusCodes.Status200OK, Type = typeof(VillaDTO))]
         [ProducesResponseType(statusCode: StatusCodes.Status204NoContent)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public ActionResult<VillaDTO> GetVilla(int id)
+        public async Task<ActionResult<VillaDTO>> GetVilla(int id)
         {
             if (id == 0)
             {
                 return BadRequest();
             }
-            var result = _db.Villas.FirstOrDefault(x => x.Id == id);
+            var result = await _db.Villas.FirstOrDefaultAsync(x => x.Id == id);
             if (result == null)
             {
                 return NotFound();
@@ -46,13 +46,13 @@ namespace net9_WebAPI.Controllers
         [HttpPost]
         [ProducesResponseType(statusCode: StatusCodes.Status200OK)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public ActionResult<VillaDTO> CreateVilla([FromBody] VillaCreateDTO villaDTO)
+        public async Task<ActionResult<VillaDTO>> CreateVilla([FromBody] VillaCreateDTO villaDTO)
         {
             if (villaDTO == null)
             {
                 return BadRequest();
             }
-            if (_db.Villas.FirstOrDefault(x => x.Name.ToLower() == villaDTO.Name.ToLower()) != null)
+            if (await _db.Villas.FirstOrDefaultAsync(x => x.Name.ToLower() == villaDTO.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("ErrorMessage", "The Name Already Exist!");
                 return BadRequest(ModelState);
@@ -69,7 +69,7 @@ namespace net9_WebAPI.Controllers
                 UpdatedDate = DateTime.Now,
             };
             _db.Villas.Add(newData);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
             return Ok(_db.Villas.ToList());
         }
 
@@ -77,13 +77,13 @@ namespace net9_WebAPI.Controllers
         [ProducesResponseType(statusCode: StatusCodes.Status204NoContent)]
         [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public IActionResult DeleteVilla(int id)
+        public async Task<IActionResult> DeleteVilla(int id)
         {
             if (id == 0) { return BadRequest(); }
-            Villa? villa = _db.Villas.FirstOrDefault(x => x.Id == id);
+            Villa? villa = await _db.Villas.FirstOrDefaultAsync(x => x.Id == id);
             if (villa == null) { return NotFound(); }
             _db.Villas.Remove(villa);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
             return NoContent();
         }
 
@@ -91,10 +91,10 @@ namespace net9_WebAPI.Controllers
         [ProducesResponseType(statusCode: StatusCodes.Status204NoContent)]
         [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public IActionResult UpdateVilla(int id, [FromBody] VillaUpdateDTO villaDTO)
+        public async Task<IActionResult> UpdateVilla(int id, [FromBody] VillaUpdateDTO villaDTO)
         {
             if (villaDTO == null || villaDTO.Id != id || id == 0) { return BadRequest(); }
-            Villa? villa = _db.Villas.FirstOrDefault(x => x.Id == id);
+            Villa? villa = await _db.Villas.FirstOrDefaultAsync(x => x.Id == id);
             if (villa == null) { return NotFound(); }
             villa.Name = villaDTO.Name;
             villa.Details = villaDTO.Details;
@@ -105,7 +105,7 @@ namespace net9_WebAPI.Controllers
             villa.ImageUrl = villaDTO.ImageUrl;
             villa.UpdatedDate = DateTime.Now;
             _db.Villas.Update(villa);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
             return NoContent();
         }
 
@@ -113,10 +113,10 @@ namespace net9_WebAPI.Controllers
         [ProducesResponseType(statusCode: StatusCodes.Status204NoContent)]
         [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public IActionResult UpdatePartialVilla(int id, JsonPatchDocument<VillaUpdateDTO> patchDTO)
+        public async Task<IActionResult> UpdatePartialVilla(int id, JsonPatchDocument<VillaUpdateDTO> patchDTO)
         {
             if (id == 0 || patchDTO == null) { return BadRequest(); }
-            Villa? villa = _db.Villas.AsNoTracking().FirstOrDefault(x => x.Id == id);
+            Villa? villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
             if (villa == null) { return NotFound(); }
             VillaUpdateDTO villaUpdateDTO = new()
             {
@@ -143,7 +143,7 @@ namespace net9_WebAPI.Controllers
                 UpdatedDate = DateTime.Now,
             };
             _db.Update(model);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
             if (ModelState.IsValid) { return BadRequest(ModelState); }
             return NoContent();
         }
