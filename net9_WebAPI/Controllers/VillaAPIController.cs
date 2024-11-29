@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ namespace net9_WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class VillaAPIController(ApplicationDbContext _db) : ControllerBase
+    public class VillaAPIController(ApplicationDbContext _db, IMapper _mapper) : ControllerBase
     {
         [HttpGet]
         [ProducesResponseType(statusCode: StatusCodes.Status200OK)]
@@ -18,7 +19,8 @@ namespace net9_WebAPI.Controllers
         {
             try
             {
-                return Ok(await _db.Villas.ToListAsync());
+                IEnumerable<Villa> villaList = await _db.Villas.ToListAsync();
+                return Ok(_mapper.Map<List<VillaDTO>>(villaList));
             }
             catch (Exception ex) { 
                 return BadRequest(ex.Message);
@@ -46,28 +48,20 @@ namespace net9_WebAPI.Controllers
         [HttpPost]
         [ProducesResponseType(statusCode: StatusCodes.Status200OK)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<VillaDTO>> CreateVilla([FromBody] VillaCreateDTO villaDTO)
+        public async Task<ActionResult<VillaDTO>> CreateVilla([FromBody] VillaCreateDTO createDTO)
         {
-            if (villaDTO == null)
+            if (createDTO == null)
             {
                 return BadRequest();
             }
-            if (await _db.Villas.FirstOrDefaultAsync(x => x.Name.ToLower() == villaDTO.Name.ToLower()) != null)
+            if (await _db.Villas.FirstOrDefaultAsync(x => x.Name.ToLower() == createDTO.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("ErrorMessage", "The Name Already Exist!");
                 return BadRequest(ModelState);
             }
-            Villa newData = new() {
-                Name = villaDTO.Name,
-                Details = villaDTO.Details,
-                Rate = villaDTO.Rate,
-                Sqft = villaDTO.Sqft,
-                Occupancy = villaDTO.Occupancy,
-                Amenity = villaDTO.Amenity,
-                ImageUrl = villaDTO.ImageUrl,
-                CreatedDate = DateTime.Now,
-                UpdatedDate = DateTime.Now,
-            };
+            Villa newData = _mapper.Map<Villa>(createDTO);
+            newData.CreatedDate = DateTime.Now;
+            newData.UpdatedDate = DateTime.Now;
             _db.Villas.Add(newData);
             await _db.SaveChangesAsync();
             return Ok(_db.Villas.ToList());
@@ -91,20 +85,14 @@ namespace net9_WebAPI.Controllers
         [ProducesResponseType(statusCode: StatusCodes.Status204NoContent)]
         [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
         [ProducesResponseType(statusCode: StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateVilla(int id, [FromBody] VillaUpdateDTO villaDTO)
+        public async Task<IActionResult> UpdateVilla(int id, [FromBody] VillaUpdateDTO updateDTO)
         {
-            if (villaDTO == null || villaDTO.Id != id || id == 0) { return BadRequest(); }
-            Villa? villa = await _db.Villas.FirstOrDefaultAsync(x => x.Id == id);
+            if (updateDTO == null || updateDTO.Id != id || id == 0) { return BadRequest(); }
+            var villa = await _db.Villas.FirstOrDefaultAsync(x => x.Id == id);
             if (villa == null) { return NotFound(); }
-            villa.Name = villaDTO.Name;
-            villa.Details = villaDTO.Details;
-            villa.Rate = villaDTO.Rate;
-            villa.Occupancy = villaDTO.Occupancy;
-            villa.Sqft = villaDTO.Sqft;
-            villa.Amenity = villaDTO.Amenity;
-            villa.ImageUrl = villaDTO.ImageUrl;
-            villa.UpdatedDate = DateTime.Now;
-            _db.Villas.Update(villa);
+            Villa model = _mapper.Map<Villa>(updateDTO);
+            _db.Villas.Update(model);
+            model.UpdatedDate = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return NoContent();
         }
@@ -118,30 +106,10 @@ namespace net9_WebAPI.Controllers
             if (id == 0 || patchDTO == null) { return BadRequest(); }
             Villa? villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
             if (villa == null) { return NotFound(); }
-            VillaUpdateDTO villaUpdateDTO = new()
-            {
-                Id = villa.Id,
-                Name = villa.Name,
-                Details = villa.Details,
-                Rate = villa.Rate,
-                Sqft = villa.Sqft,
-                Occupancy = villa.Occupancy,
-                ImageUrl = villa.ImageUrl,
-                Amenity = villa.Amenity,
-            };
+            VillaUpdateDTO villaUpdateDTO = _mapper.Map<VillaUpdateDTO>(villa);
             patchDTO.ApplyTo(villaUpdateDTO, ModelState);
-            Villa model = new()
-            {
-                Id = villaUpdateDTO.Id,
-                Name = villaUpdateDTO.Name,
-                Details = villaUpdateDTO.Details,
-                Rate = villaUpdateDTO.Rate,
-                Sqft= villaUpdateDTO.Sqft,
-                Occupancy= villaUpdateDTO.Occupancy,
-                ImageUrl = villaUpdateDTO.ImageUrl,
-                Amenity= villaUpdateDTO.Amenity,
-                UpdatedDate = DateTime.Now,
-            };
+            Villa model = _mapper.Map<Villa>(villaUpdateDTO);
+            model.UpdatedDate = DateTime.UtcNow;
             _db.Update(model);
             await _db.SaveChangesAsync();
             if (ModelState.IsValid) { return BadRequest(ModelState); }
